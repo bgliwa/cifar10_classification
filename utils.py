@@ -9,6 +9,7 @@ from keras import backend as K
 objects_per_batch = 1000
 batch_num = 5
 classes_num = 10
+image_size = 32
 K.set_image_data_format('channels_last')
 
 
@@ -40,8 +41,7 @@ def unpickle(file):
 
 def process_dict(datadict):
     data = datadict[b'data'][:objects_per_batch]
-    # images are 32 x 32 px
-    data_norm = data.reshape(objects_per_batch, 3, 32, 32).transpose(0, 2, 3, 1).astype("uint8")
+    data_norm = data.reshape(objects_per_batch, 3, image_size, image_size).transpose(0, 2, 3, 1).astype("uint8")
     labels = datadict[b'labels'][:objects_per_batch]
     return data_norm, labels
 

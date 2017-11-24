@@ -4,12 +4,11 @@ from keras.applications.inception_v3 import InceptionV3, preprocess_input
 import numpy as np
 import scipy.misc
 import matplotlib.pyplot as plt
-
 from sklearn.decomposition import PCA
 from sklearn.manifold import TSNE
 import os
-
 from keras.preprocessing.image import ImageDataGenerator
+
 
 def check_extract_inception_features():
     model = InceptionV3(weights='imagenet', include_top=False, pooling='avg', input_shape=(139, 139, 3))
@@ -30,15 +29,16 @@ def check_make_data_augmentation():
         Y = []
         # image augmentation with only horizontal flip
         datagen = ImageDataGenerator(horizontal_flip=True)
-        for i in range(1, 6):
+        for i in range(1, utils.batch_num + 1):
             print("\tbatch " + str(i))
             data_norm, labels = utils.get_data_from_batch(i)
 
             prepared_ims = prepare_images(data_norm, model)
             datagen.fit(prepared_ims)
 
-            #generate 250 augmented images in each batch
-            for x_batch, y_batch in datagen.flow(prepared_ims, labels, batch_size=250, seed=0): # seed set to make experiments repeatable
+            # generate 250 augmented images in each batch
+            for x_batch, y_batch in datagen.flow(prepared_ims, labels, batch_size=250,
+                                                 seed=0):  # seed set to make experiments repeatable
                 prepared_ims = np.concatenate((prepared_ims, x_batch), axis=0)
                 labels = np.concatenate((np.asarray(labels), y_batch), axis=0)
                 break
@@ -64,7 +64,7 @@ def prepare_images(data_norm, model):
     scaled_ims = np.array(
         [scipy.misc.imresize(data_norm[k], model.input_shape[1:]) for k in range(0, len(data_norm))]).astype(
         'float32')
-    #then make preprocessing required by model
+    # then make preprocessing required by model
     return preprocess_input(scaled_ims)
 
 
@@ -146,7 +146,7 @@ def visualizePCA(data, labels):
 
 
 def visualizeTSNE(data, labels):
-    #firstly use PCA to reduce number of features
+    # firstly use PCA to reduce number of features
     pca = PCA(n_components=50)
     data_reduced = pca.fit_transform(data)
     tsne = TSNE(n_components=2)
@@ -168,6 +168,7 @@ train_features2, test_features2 = check_extract_inceptionresnet_features()
 utils.run_svm(train_features2, train_labels, test_features2, test_labels)
 #
 # # testing classification on combined set of features extracted by Inception_v3 and InceptionResNet_v2
+print("Combining features from Inception v3 and InceptionResNet v2 models")
 train_features_combined = np.concatenate((train_features, train_features2), axis=1)
 test_features_combined = np.concatenate((test_features, test_features2), axis=1)
 utils.run_svm(train_features_combined, train_labels, test_features_combined, test_labels)
@@ -175,4 +176,3 @@ utils.run_svm(train_features_combined, train_labels, test_features_combined, tes
 # testing data augmentation on Inception_v3 model
 augmented_train_features, augmented_train_labels = check_make_data_augmentation()
 utils.run_svm(augmented_train_features, augmented_train_labels, test_features, test_labels)
-

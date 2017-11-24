@@ -4,7 +4,7 @@ import utils
 
 
 def visualize_random_images_in_classes():
-    #we use data from 1st batch for visualization
+    # we use data from 1st batch for visualization
     data_norm, labels = utils.get_data_from_batch(1)
     label_names = utils.get_label_names()
     samples_num = 10
@@ -24,4 +24,3 @@ def visualize_random_images_in_classes():
 utils.check_download_dataset()
 utils.check_extract_dataset()
 visualize_random_images_in_classes()
-
