@@ -18,7 +18,9 @@ def visualize_random_images_in_classes():
             k = np.random.choice(indexes, replace=False)
             axes[i][j].set_axis_off()
             axes[i][j].imshow(data_norm[k])
-    plt.show()
+    plt.savefig('random_images_per_class.png')
+    #plt.show()
+    plt.close()
 
 
 utils.check_download_dataset()

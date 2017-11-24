@@ -21,20 +21,19 @@ def check_extract_inceptionresnet_features():
 
 
 def check_make_data_augmentation():
-    if not os.path.exists('augmented_features_train.npz') or not os.path.exists('augmented_features_test.npz'):
+    model = InceptionV3(weights='imagenet', include_top=False, pooling='avg', input_shape=(139, 139, 3))
+    if not os.path.exists('augmented_features_train.npz') or not os.path.exists('augmented_labels_train.npz'):
         print("Data augmentation")
-        model = InceptionV3(weights='imagenet', include_top=False, pooling='avg', input_shape=(139, 139, 3))
 
         YP = []
         Y = []
-        # image augmentation with only horizontal flip
-        datagen = ImageDataGenerator(horizontal_flip=True)
+        datagen = ImageDataGenerator(horizontal_flip=True, width_shift_range=0.2,
+                                     height_shift_range=0.2, zoom_range=0.1)
         for i in range(1, utils.batch_num + 1):
             print("\tbatch " + str(i))
             data_norm, labels = utils.get_data_from_batch(i)
 
             prepared_ims = prepare_images(data_norm, model)
-            datagen.fit(prepared_ims)
 
             # generate 250 augmented images in each batch
             for x_batch, y_batch in datagen.flow(prepared_ims, labels, batch_size=250,
@@ -46,8 +45,8 @@ def check_make_data_augmentation():
             predicted = model.predict(prepared_ims)
             YP.append(predicted)
 
-            np.savez('augmented_features_train', train_features=YP)
-            np.savez('augmented_labels_train', labels=Y)
+        np.savez('augmented_features_train', train_features=YP)
+        np.savez('augmented_labels_train', labels=Y)
     else:
         print("Loading augmented data")
 
@@ -136,16 +135,20 @@ def plot_scatter(values, cls, title):
 
     plt.title(title)
     plt.legend()
-    plt.show()
+    plt.savefig(title + ".png")
+    # plt.show()
+    plt.close()
 
 
 def visualizePCA(data, labels):
+    print("Computing PCA")
     pca = PCA(n_components=2)
     data_reduced = pca.fit_transform(data)
     plot_scatter(data_reduced, labels, "PCA")
 
 
 def visualizeTSNE(data, labels):
+    print("Computing t-SNE")
     # firstly use PCA to reduce number of features
     pca = PCA(n_components=50)
     data_reduced = pca.fit_transform(data)

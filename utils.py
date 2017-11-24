@@ -92,7 +92,7 @@ def run_svm(X, Y, XT, YT, params=None):
     clf = svm.LinearSVC()
 
     if params is not None:
-        clf.set_params(params)
+        clf.set_params(**params)
         clf.fit(X, Y)
     else:
         params = {'C': [0.00001, 0.0001, 0.001, 0.01, 0.1, 1, 10]}
