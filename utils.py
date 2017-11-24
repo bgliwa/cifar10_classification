@@ -7,7 +7,10 @@ import time
 from keras import backend as K
 
 objects_per_batch = 1000
+batch_num = 5
+classes_num = 10
 K.set_image_data_format('channels_last')
+
 
 def check_download_dataset():
     if not os.path.exists("cifar-10-python.tar.gz"):
@@ -27,31 +30,38 @@ def check_extract_dataset():
     else:
         print("Dataset already extracted")
 
+
 def unpickle(file):
     import pickle
     with open(file, 'rb') as fo:
         dict = pickle.load(fo, encoding="bytes")
     return dict
 
+
 def process_dict(datadict):
     data = datadict[b'data'][:objects_per_batch]
+    # images are 32 x 32 px
     data_norm = data.reshape(objects_per_batch, 3, 32, 32).transpose(0, 2, 3, 1).astype("uint8")
     labels = datadict[b'labels'][:objects_per_batch]
     return data_norm, labels
+
 
 def get_data_from_batch(batch_no):
     datadict = unpickle("cifar-10-batches-py/data_batch_" + str(batch_no))
     return process_dict(datadict)
 
+
 def get_data_from_test_batch():
     datadict = unpickle("cifar-10-batches-py/test_batch")
     return process_dict(datadict)
+
 
 def get_label_names():
     labeldict = unpickle("cifar-10-batches-py/batches.meta")
     return labeldict[b'label_names']
 
-def hyperparameter_optimization(clf, params, X, Y, XT, YT):
+
+def hyperparameter_optimization(clf, params, X, Y):
     print("Optimizing hyperparameters")
     grid = GridSearchCV(clf, params, cv=5)
     start = time.time()
@@ -60,14 +70,13 @@ def hyperparameter_optimization(clf, params, X, Y, XT, YT):
     # evaluate the best grid searched model on the testing data
     print("[INFO] grid search took {:.2f} seconds".format(
         time.time() - start))
-    acc = grid.score(XT, YT)
-    print("[INFO] grid search accuracy: {:.2f}%".format(acc * 100))
     print("[INFO] grid search best parameters: {}".format(
         grid.best_params_))
 
     return grid.best_estimator_
 
-def print_accuracy_report(expected,predicted,test=1):
+
+def print_accuracy_report(expected, predicted, test=1):
     if test == 1:
         print("====================Test data====================")
     else:
@@ -84,15 +93,15 @@ def run_svm(X, Y, XT, YT, params=None):
 
     if params is not None:
         clf.set_params(params)
-        clf.fit(X,Y)
+        clf.fit(X, Y)
     else:
-        params = {'C': [0.00001, 0.0001, 0.001]} #, 0.01, 0.1, 1, 10
-        clf = hyperparameter_optimization(clf,params, X,Y,XT,YT)
+        params = {'C': [0.00001, 0.0001, 0.001, 0.01, 0.1, 1, 10]}
+        clf = hyperparameter_optimization(clf, params, X, Y)
 
     expected = Y
     predicted = clf.predict(X)
-    print_accuracy_report(expected,predicted,test=0)
+    print_accuracy_report(expected, predicted, test=0)
 
     expected = YT
     predicted = clf.predict(XT)
-    print_accuracy_report(expected,predicted,test=1)
+    print_accuracy_report(expected, predicted, test=1)

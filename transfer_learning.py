@@ -28,6 +28,7 @@ def check_make_data_augmentation():
 
         YP = []
         Y = []
+        # image augmentation with only horizontal flip
         datagen = ImageDataGenerator(horizontal_flip=True)
         for i in range(1, 6):
             print("\tbatch " + str(i))
@@ -36,6 +37,7 @@ def check_make_data_augmentation():
             prepared_ims = prepare_images(data_norm, model)
             datagen.fit(prepared_ims)
 
+            #generate 250 augmented images in each batch
             for x_batch, y_batch in datagen.flow(prepared_ims, labels, batch_size=250, seed=0): # seed set to make experiments repeatable
                 prepared_ims = np.concatenate((prepared_ims, x_batch), axis=0)
                 labels = np.concatenate((np.asarray(labels), y_batch), axis=0)
@@ -58,15 +60,17 @@ def check_make_data_augmentation():
 
 
 def prepare_images(data_norm, model):
+    # scaling image size to match model's input
     scaled_ims = np.array(
         [scipy.misc.imresize(data_norm[k], model.input_shape[1:]) for k in range(0, len(data_norm))]).astype(
         'float32')
+    #then make preprocessing required by model
     return preprocess_input(scaled_ims)
 
 
 def extract_labels():
     Y = []
-    for i in range(1, 6):
+    for i in range(1, utils.batch_num + 1):
         _, labels = utils.get_data_from_batch(i)
         Y.extend(labels)
 
@@ -85,7 +89,7 @@ def check_extract_data_features(model):
         print("Extracting features for model " + model.name)
 
         YP = []
-        for i in range(1, 6):
+        for i in range(1, utils.batch_num + 1):
             print("\tbatch " + str(i))
             data_norm, _ = utils.get_data_from_batch(i)
 
@@ -116,9 +120,8 @@ def check_extract_data_features(model):
 def plot_scatter(values, cls, title):
     # Create a color-map with a different color for each class.
     import matplotlib.cm as cm
-    num_classes = 10
     label_names = utils.get_label_names()
-    cmap = cm.rainbow(np.linspace(0.0, 1.0, num_classes))
+    cmap = cm.rainbow(np.linspace(0.0, 1.0, utils.classes_num))
 
     # Get the color for each sample.
     colors = cmap[cls]
@@ -127,7 +130,7 @@ def plot_scatter(values, cls, title):
     x = values[:, 0]
     y = values[:, 1]
 
-    for i in range(num_classes):
+    for i in range(utils.classes_num):
         cls_idx = np.where(cls == i)[0]
         plt.scatter(x[cls_idx], y[cls_idx], color=colors[cls_idx[0]], label=label_names[i].decode("utf-8"))
 
@@ -143,6 +146,7 @@ def visualizePCA(data, labels):
 
 
 def visualizeTSNE(data, labels):
+    #firstly use PCA to reduce number of features
     pca = PCA(n_components=50)
     data_reduced = pca.fit_transform(data)
     tsne = TSNE(n_components=2)
